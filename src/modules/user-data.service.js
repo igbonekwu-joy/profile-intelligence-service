@@ -17,10 +17,15 @@ const fetchGender = async (name) => {
   return response;
 }
 
-// const fetchAge = async (name) => {
-//     const response = await axiosGetInstance.get('/', { params: { name } });
+const fetchAge = async (name) => {
+    const response = await axiosGetInstance.get(
+                        `${config.AGIFY_API_URL}`, 
+                        { params: 
+                          { name } 
+                        }
+                      );
 
-//     return response;
-// }
+    return response;
+}
 
-module.exports = { fetchGender };
+module.exports = { fetchGender, fetchAge };
