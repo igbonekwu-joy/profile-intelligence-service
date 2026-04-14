@@ -28,4 +28,15 @@ const fetchAge = async (name) => {
     return response;
 }
 
-module.exports = { fetchGender, fetchAge };
+const fetchCountryList = async (name) => {
+    const response = await axiosGetInstance.get(
+                        `${config.NATIONALIZE_API_URL}`, 
+                        { params: 
+                          { name } 
+                        }
+                      );
+
+    return response;
+}
+
+module.exports = { fetchGender, fetchAge, fetchCountryList };

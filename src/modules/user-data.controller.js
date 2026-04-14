@@ -1,6 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
 const { validateName } = require("./user-data.validator");
-const { fetchGender, fetchAge } = require("./user-data.service");
+const { fetchGender, fetchAge, fetchCountryList } = require("./user-data.service");
+const { uuidv7 } = require("uuidv7");
 
 const fetchUserData = async (req, res) => {
     let age_group;
@@ -17,10 +18,12 @@ const fetchUserData = async (req, res) => {
 
     const fetchResult = await fetchGender(name);
     const fetchAgeResult = await fetchAge(name);
+    const fetchCountryListResult = await fetchCountryList(name);
     
     const { gender, probability: gender_probability, count: sample_size } = fetchResult.data;
     const { age } = fetchAgeResult.data;
-
+    const countries = fetchCountryListResult.data.country;
+ 
     if (gender === null || sample_size === 0) {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No prediction available for the provided name." });
     }
@@ -29,22 +32,30 @@ const fetchUserData = async (req, res) => {
         return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No age prediction available for the provided name." });
     }
 
-    if (age > 0 && age <= 12) {
+    if (countries.length === 0) {
+        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No country prediction available for the provided name." });
+    }
+
+    if (age > 0 && age <= 12) 
         age_group = "child";
-    }
-    else if (age > 12 && age <= 19) {
+    else if (age > 12 && age <= 19) 
         age_group = "teenager";
-    }
-    else if (age > 19 && age <= 59) {
+    else if (age > 19 && age <= 59) 
         age_group = "adult";
-    }
-    else {
+    else 
         age_group = "senior";
-    }
+
+    const topCountry = countries.reduce((highest, current) => 
+        current.probability > highest.probability ? current : highest
+    );
+
+    const id = uuidv7();
+
+    const data = { id, name, gender, gender_probability, sample_size, age, age_group, country_id: topCountry.country_id, country_probability: topCountry.probability };
 
     return res.status(StatusCodes.OK).json({ 
         status: "success", 
-        data: { name, gender, gender_probability, sample_size, age, age_group } 
+        data
     });
 }
 
