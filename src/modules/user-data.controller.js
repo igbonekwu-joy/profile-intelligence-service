@@ -2,6 +2,7 @@ const { StatusCodes } = require("http-status-codes");
 const { validateName } = require("./user-data.validator");
 const { fetchGender, fetchAge, fetchCountryList } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
+const userData = require("./user-data.model");
 
 const fetchUserData = async (req, res) => {
     let age_group;
@@ -25,15 +26,15 @@ const fetchUserData = async (req, res) => {
     const countries = fetchCountryListResult.data.country;
  
     if (gender === null || sample_size === 0) {
-        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No prediction available for the provided name." });
+        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "error", message: "No prediction available for the provided name." });
     }
 
     if (age === null) {
-        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No age prediction available for the provided name." });
+        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "error", message: "No age prediction available for the provided name." });
     }
 
     if (countries.length === 0) {
-        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "No country prediction available for the provided name." });
+        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "error", message: "No country prediction available for the provided name." });
     }
 
     if (age > 0 && age <= 12) 
@@ -53,10 +54,10 @@ const fetchUserData = async (req, res) => {
 
     const data = { id, name, gender, gender_probability, sample_size, age, age_group, country_id: topCountry.country_id, country_probability: topCountry.probability };
 
-    return res.status(StatusCodes.OK).json({ 
-        status: "success", 
-        data
-    });
+    let user = new userData(data);
+    user = await user.save();
+
+    return res.status(StatusCodes.CREATED).json({ status: "success", data: user });
 }
 
 module.exports = {

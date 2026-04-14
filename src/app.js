@@ -25,8 +25,9 @@ app.use(compression());
 app.use(errorHandler);
 app.use(responseTimeHandler);
 
-require('./startup/logger')();
 require('./startup/routes')(app);
+require('./startup/db')();
+require('./startup/logger')();
 
 app.use(timeout('10s')); // abort requests that take longer than 10 seconds
 app.use((req, res, next) => {

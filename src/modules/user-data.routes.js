@@ -4,7 +4,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const { StatusCodes } = require('http-status-codes');
 const router = express.Router();
 
-router.get('/api/profiles', asyncHandler(fetchUserData));
+router.post('/api/profiles', asyncHandler(fetchUserData));
 
 // router.get('/health', (req, res) => {
 //     res.status(StatusCodes.OK).send('Server is up and running!');
