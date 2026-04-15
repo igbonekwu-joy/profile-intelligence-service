@@ -15,6 +15,7 @@ const userDataSchema = new mongoose.Schema(
         versionKey: false,
         toJSON: {
             transform(_doc, rec) {
+                delete rec.__v;
                 delete rec._id; 
                 delete rec.updatedAt;
                 return rec; 

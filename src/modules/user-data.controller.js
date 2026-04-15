@@ -1,12 +1,42 @@
 const { StatusCodes } = require("http-status-codes");
 const { validateName } = require("./user-data.validator");
-const { fetchGender, fetchAge, fetchCountryList } = require("./user-data.service");
+const { fetchGender, fetchAge, fetchCountryList, findUserByName, edgeCases, getAgeGroup } = require("./user-data.service");
 const { uuidv7 } = require("uuidv7");
 const userData = require("./user-data.model");
 
-const fetchUserData = async (req, res) => {
-    let age_group;
-    const name = req.query.name;
+const index = async (req, res) => {
+    const { gender, country_id, age_group } = req.query;
+    let filter = {};
+
+    if (gender) {
+        filter.gender = gender.toLowerCase();
+    }
+
+    if (country_id) {
+        filter.country_id = country_id.toUpperCase();
+    }
+
+    if (age_group) {
+        filter.age_group = age_group;
+    }
+
+    let users = await userData.find(filter, { id: 1, name: 1, gender: 1, country_id: 1, age: 1, age_group: 1 });
+    users = users.map((user, index) => ({
+        ...user.toJSON(),
+        id: `id-${index + 1}`
+    }));
+
+    let count = users.length;
+    return res.status(StatusCodes.OK).json({ status: "success", count, data: users });
+} 
+
+const storeUserData = async (req, res) => {
+    const name = req.body.name;
+
+    let existingUser = await findUserByName(name);
+    if(existingUser) {
+        return res.status(StatusCodes.OK).json({ status: "success", message: "Profile already exists", data: existingUser });
+    }
 
     // Validate with Joi
     const { error } = validateName.validate({ name });
@@ -20,46 +50,60 @@ const fetchUserData = async (req, res) => {
     const fetchResult = await fetchGender(name);
     const fetchAgeResult = await fetchAge(name);
     const fetchCountryListResult = await fetchCountryList(name);
+
+    if (fetchResult.statusCode || fetchAgeResult.statusCode || fetchCountryListResult.statusCode) {
+        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "error", message: fetchResult.message || fetchAgeResult.message || fetchCountryListResult.message });
+    }
     
     const { gender, probability: gender_probability, count: sample_size } = fetchResult.data;
     const { age } = fetchAgeResult.data;
     const countries = fetchCountryListResult.data.country;
- 
-    if (gender === null || sample_size === 0) {
-        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "error", message: "No prediction available for the provided name." });
+
+    const checkEdgeCases = edgeCases(gender, age, countries, sample_size);
+    if (checkEdgeCases) {
+        return res.status(checkEdgeCases.statusCode).json({ status: "error", message: checkEdgeCases.message });
     }
 
-    if (age === null) {
-        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "error", message: "No age prediction available for the provided name." });
-    }
-
-    if (countries.length === 0) {
-        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "error", message: "No country prediction available for the provided name." });
-    }
-
-    if (age > 0 && age <= 12) 
-        age_group = "child";
-    else if (age > 12 && age <= 19) 
-        age_group = "teenager";
-    else if (age > 19 && age <= 59) 
-        age_group = "adult";
-    else 
-        age_group = "senior";
-
+    const age_group = getAgeGroup(age);
     const topCountry = countries.reduce((highest, current) => 
         current.probability > highest.probability ? current : highest
     );
-
     const id = uuidv7();
 
     const data = { id, name, gender, gender_probability, sample_size, age, age_group, country_id: topCountry.country_id, country_probability: topCountry.probability };
-
     let user = new userData(data);
     user = await user.save();
 
     return res.status(StatusCodes.CREATED).json({ status: "success", data: user });
 }
 
+const fetchUserData = async (req, res) => {
+    const id = req.params.id;
+    
+    const user = await userData.findOne({ id });
+
+    if (!user) {
+        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "User not found" });
+    }
+
+    return res.status(StatusCodes.OK).json({ status: "success", data: user });
+}
+
+const deleteUserData = async (req, res) => {
+    const id = req.params.id;
+
+    const user = await userData.findOneAndDelete({ id });
+
+    if (!user) {
+        return res.status(StatusCodes.NOT_FOUND).json({ status: "error", message: "User not found" });
+    }
+
+    return res.status(StatusCodes.NO_CONTENT).json({  });
+}
+
 module.exports = {
-    fetchUserData
+    index,
+    storeUserData,
+    fetchUserData,
+    deleteUserData
 }
