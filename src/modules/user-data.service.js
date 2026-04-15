@@ -3,6 +3,7 @@ const { createAxiosInstance } = require("../utils/axios");
 const config = require("../config");
 const userData = require("./user-data.model");
 const { StatusCodes } = require("http-status-codes");
+const winston = require("winston");
 
 const axiosGetInstance = createAxiosInstance(
   '/'
@@ -19,6 +20,7 @@ const fetchGender = async (name) => {
 
     return response;
   } catch (error) {
+    winston.error("Genderize returned an invalid response", error);
     return { statusCode: StatusCodes.BAD_GATEWAY, message: "Genderize returned an invalid response" };
   }
 
@@ -36,6 +38,7 @@ const fetchAge = async (name) => {
     return response;
   }
   catch (error) {
+    winston.error("Agify returned an invalid response", error);
     return { statusCode: StatusCodes.BAD_GATEWAY, message: "Agify returned an invalid response" };
   }
 }
@@ -52,6 +55,7 @@ const fetchCountryList = async (name) => {
     return response;
   }
   catch (error) {
+    winston.error("Nationalize returned an invalid response", error);
     return { statusCode: StatusCodes.BAD_GATEWAY, message: "Nationalize returned an invalid response" };
   }
 }

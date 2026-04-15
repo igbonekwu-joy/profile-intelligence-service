@@ -52,7 +52,7 @@ const storeUserData = async (req, res) => {
     const fetchCountryListResult = await fetchCountryList(name);
 
     if (fetchResult.statusCode || fetchAgeResult.statusCode || fetchCountryListResult.statusCode) {
-        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "error", message: fetchResult.message || fetchAgeResult.message || fetchCountryListResult.message });
+        return res.status(StatusCodes.BAD_GATEWAY).json({ status: "502", message: fetchResult.message || fetchAgeResult.message || fetchCountryListResult.message });
     }
     
     const { gender, probability: gender_probability, count: sample_size } = fetchResult.data;
@@ -70,7 +70,17 @@ const storeUserData = async (req, res) => {
     );
     const id = uuidv7();
 
-    const data = { id, name, gender, gender_probability, sample_size, age, age_group, country_id: topCountry.country_id, country_probability: topCountry.probability };
+    const data = { 
+        id, 
+        name, 
+        gender, 
+        gender_probability, 
+        sample_size, 
+        age, 
+        age_group, 
+        country_id: topCountry.country_id, 
+        country_probability: topCountry.probability.toFixed(2) 
+    };
     let user = new userData(data);
     user = await user.save();
 
