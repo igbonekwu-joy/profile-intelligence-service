@@ -21,10 +21,6 @@ const index = async (req, res) => {
     }
 
     let users = await userData.find(filter, { id: 1, name: 1, gender: 1, country_id: 1, age: 1, age_group: 1 });
-    users = users.map((user, index) => ({
-        ...user.toJSON(),
-        id: `id-${index + 1}`
-    }));
 
     let count = users.length;
     return res.status(StatusCodes.OK).json({ status: "success", count, data: users });
