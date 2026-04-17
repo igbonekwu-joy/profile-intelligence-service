@@ -1,4 +1,3 @@
-const e = require("express");
 const { createAxiosInstance } = require("../utils/axios");
 const config = require("../config");
 const userData = require("./user-data.model");
@@ -47,7 +46,7 @@ const fetchCountryList = async (name) => {
   try {
     const response = await axiosGetInstance.get(
                         `${config.NATIONALIZE_API_URL}`, 
-                        { params: 
+                        { params:  
                           { name } 
                         }
                       );
