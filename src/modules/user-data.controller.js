@@ -5,7 +5,7 @@ const { uuidv7 } = require("uuidv7");
 const userData = require("./user-data.model");
 
 const index = async (req, res) => {
-    const { gender, country_id, age_group } = req.query;
+    const { gender, country_id, age_group, page, limit } = req.query;
     let filter = {};
 
     if (gender) {
@@ -20,7 +20,9 @@ const index = async (req, res) => {
         filter.age_group = age_group;
     }
 
-    let users = await userData.find(filter, { id: 1, name: 1, gender: 1, country_id: 1, age: 1, age_group: 1 });
+    let users = await userData.find(filter, { id: 1, name: 1, gender: 1, country_id: 1, age: 1, age_group: 1 })
+    .skip((page - 1) * limit)
+    .limit(parseInt(limit));
 
     let count = users.length;
     return res.status(StatusCodes.OK).json({ status: "success", count, data: users });
